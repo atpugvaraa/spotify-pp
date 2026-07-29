@@ -1,66 +1,25 @@
-type SwipeCallbacks = {
-  left?: () => void;
-  right?: () => void;
-};
+import handleHorizontalSwipe from "./gestures";
+import { waitFor, waitForElement } from "./dom";
+import { hide, setHeight, setSize } from "./ui";
 
-async function waitFor(predicate: () => boolean, intervalMs = 100): Promise<void> {
-  while (!predicate()) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-}
-
-/** Resolves once the given selector is in the DOM, returning the element. */
-async function waitForElement<T extends HTMLElement>(
-  selector: string,
-  intervalMs = 100,
-): Promise<T> {
-  await waitFor(() => document.querySelector(selector) !== null, intervalMs);
-  return document.querySelector<T>(selector)!;
-}
-
-function handleHorizontalSwipe(
-  element: HTMLElement,
-  callbacks: SwipeCallbacks,
-  threshold = 80,
-  idleMs = 150,
-): void {
-  let accumulated = 0;
-  let locked = false;
-  let idleTimer: number | undefined;
-
-  element.addEventListener(
-    "wheel",
-    (e: WheelEvent) => {
-      // Ignore vertical scrolls and the post-swipe momentum tail.
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-
-      // Reset once the burst goes quiet, so the next swipe starts fresh.
-      clearTimeout(idleTimer);
-      idleTimer = window.setTimeout(() => {
-        accumulated = 0;
-        locked = false;
-      }, idleMs);
-
-      if (locked) return;
-      accumulated += e.deltaX;
-
-      if (accumulated > threshold) {
-        callbacks.right?.();
-        locked = true;
-      } else if (accumulated < -threshold) {
-        callbacks.left?.();
-        locked = true;
-      }
-    },
-    { passive: true },
-  );
-}
-
-async function main(): Promise<void> {
+async function init() {
   await waitFor(() => Boolean(Spicetify?.Platform && Spicetify?.Player));
+}
 
-  const mainView = await waitForElement(".Root__main-view");
-  const nowPlayingBar = await waitForElement(".Root__now-playing-bar");
+export default async function main(): Promise<void> {
+  await init()
+
+  const topBar = await waitForElement(".Root__globalNav")
+  const mainView = await waitForElement(".Root__main-view")
+  const nowPlayingBar = await waitForElement(".Root__now-playing-bar")
+  const avatar = await waitForElement(".main-image-image")
+  const avatarChild = await waitForElement(".main-image-image.main-avatar-image")
+
+  hide(".main-globalNav-searchSection")
+  setHeight(topBar, 30)
+  setSize(avatar.parentElement as HTMLElement, 24)
+  setSize(avatar, 24)
+  setSize(avatarChild, 24)
 
   handleHorizontalSwipe(mainView, {
     left: () => Spicetify.Platform.History.goBack(),
@@ -75,5 +34,3 @@ async function main(): Promise<void> {
     right: () => Spicetify.Player.next(),
   }, 20);
 }
-
-export default main;

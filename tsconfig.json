@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "es2022",
     "jsx": "react",
-    "module": "commonjs",
-    "resolveJsonModule": true,
+    "module": "es2022",
+    // "resolveJsonModule": true,
     "outDir": "dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
